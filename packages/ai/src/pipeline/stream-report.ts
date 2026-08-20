@@ -135,7 +135,7 @@ export function attachRelayReporting(
           outputText: ev.outputText,
           doneSentinel: ev.doneSentinel,
           terminalFrame: ev.terminalFrame,
-          ...(contextOverflow ? { contextOverflow: true } : {}),
+          ...(contextOverflow ? { contextOverflow: true, model: bus.model } : {}),
         });
         break;
       }

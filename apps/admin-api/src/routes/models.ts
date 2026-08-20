@@ -39,6 +39,8 @@ const createSchema = z.object({
   inputPrice: price,
   outputPrice: price,
   cacheInputPrice: price,
+  /** 缓存写单价（元/百万 token；缺省 0 = 不收缓存写费） */
+  cacheWritePrice: price.optional(),
   isFree: z.boolean().optional(),
   billingPolicy: billingPolicySchema.nullable().optional(),
   rpmLimit: z.coerce.number().int().positive().max(1e9).nullable().optional(),
@@ -53,6 +55,7 @@ const updateSchema = z.object({
   inputPrice: price.optional(),
   outputPrice: price.optional(),
   cacheInputPrice: price.optional(),
+  cacheWritePrice: price.optional(),
   isFree: z.boolean().optional(),
   billingPolicy: billingPolicySchema.nullable().optional(),
   rpmLimit: z.coerce.number().int().positive().nullable().optional(),
@@ -80,6 +83,7 @@ const idParam = (raw: string): number => {
   return id;
 };
 
+
 export function modelsRoutes(service: ModelsService, session: MiddlewareHandler<SessionEnv>) {
   const app = new Hono<SessionEnv>();
 
@@ -99,6 +103,7 @@ export function modelsRoutes(service: ModelsService, session: MiddlewareHandler<
         inputPrice: String(body.inputPrice),
         outputPrice: String(body.outputPrice),
         cacheInputPrice: String(body.cacheInputPrice),
+        cacheWritePrice: String(body.cacheWritePrice ?? 0),
       },
       isFree: body.isFree,
       rpmLimit: body.rpmLimit ?? null,
@@ -123,12 +128,13 @@ export function modelsRoutes(service: ModelsService, session: MiddlewareHandler<
         ...(body.billingPolicy !== undefined ? { billingPolicy: body.billingPolicy } : {}),
         ...(body.rpmLimit !== undefined ? { rpmLimit: body.rpmLimit } : {}),
         ...(body.tpmLimit !== undefined ? { tpmLimit: body.tpmLimit } : {}),
-        ...(body.inputPrice !== undefined || body.outputPrice !== undefined || body.cacheInputPrice !== undefined
+        ...(body.inputPrice !== undefined || body.outputPrice !== undefined || body.cacheInputPrice !== undefined || body.cacheWritePrice !== undefined
           ? {
               prices: {
                 ...(body.inputPrice !== undefined ? { inputPrice: String(body.inputPrice) } : {}),
                 ...(body.outputPrice !== undefined ? { outputPrice: String(body.outputPrice) } : {}),
                 ...(body.cacheInputPrice !== undefined ? { cacheInputPrice: String(body.cacheInputPrice) } : {}),
+                ...(body.cacheWritePrice !== undefined ? { cacheWritePrice: String(body.cacheWritePrice) } : {}),
               },
             }
           : {}),
@@ -157,6 +163,7 @@ export function modelsRoutes(service: ModelsService, session: MiddlewareHandler<
     const id = idParam(c.req.param('id'));
     return c.json(await service.probe(adminCtxOf(c), id));
   });
+
 
   return app;
 }

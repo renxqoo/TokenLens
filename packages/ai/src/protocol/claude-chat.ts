@@ -232,6 +232,7 @@ const STOP_REASON_MAP: Record<string, string> = {
 };
 
 export function claudeUsageToUsage(u: unknown): {
+  /** 总输入（OpenAI 口径 = 未缓存 + 缓存读 + 缓存写；Anthropic input_tokens 只含未缓存） */
   promptTokens: number;
   completionTokens: number;
   cachedTokens: number;
@@ -247,11 +248,16 @@ export function claudeUsageToUsage(u: unknown): {
   const cacheCreate = typeof j.cache_creation_input_tokens === 'number' ? j.cache_creation_input_tokens : 0;
   const oneHour = asJson(j.cache_creation)?.ephemeral_1h_input_tokens;
   const cacheCreate1h = typeof oneHour === 'number' ? oneHour : 0;
+  const write = cacheCreate + cacheCreate1h;
+  // 口径修复（资金正确性）：Anthropic input_tokens 不含缓存部分——补齐为总输入，
+  // 与规范形/计费公式的「inputTokens 含 cached（及 write）」口径对齐。
+  // 历史缺陷：按旧口径 uncached = input − cached 会少算缓存命中的未缓存分量。
+  const total = input + cacheRead + write;
   return {
-    promptTokens: input,
+    promptTokens: total,
     completionTokens: output,
-    cachedTokens: Math.min(cacheRead, input),
-    cacheCreationTokens: cacheCreate + cacheCreate1h,
+    cachedTokens: Math.min(cacheRead, total),
+    cacheCreationTokens: write,
   };
 }
 

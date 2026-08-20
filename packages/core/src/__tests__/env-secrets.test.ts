@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 describe('core env — 弱密钥拒绝', () => {
   it('change-me-32-chars-minimum-secret 必须被拒绝', async () => {
     const { loadAdminApiEnv, loadClientApiEnv, loadGatewayEnv } =
-      await import('../../src/index.js');
+      await import('../../src/env.js');
     expect(() =>
       loadAdminApiEnv({
         DATABASE_URL: 'postgres://x',
@@ -38,7 +38,7 @@ describe('core env — 弱密钥拒绝', () => {
   });
 
   it('合法强密钥应通过', async () => {
-    const { loadAdminApiEnv, loadClientApiEnv } = await import('../../src/index.js');
+    const { loadAdminApiEnv, loadClientApiEnv } = await import('../../src/env.js');
     const adminEnv = loadAdminApiEnv({
       DATABASE_URL: 'postgres://x',
       REDIS_URL: 'redis://x',
@@ -57,7 +57,7 @@ describe('core env — 弱密钥拒绝', () => {
   });
 
   it('GLOBAL_RPM 生产环境强制硬上限 5000', async () => {
-    const { loadGatewayEnv } = await import('../../src/index.js');
+    const { loadGatewayEnv } = await import('../../src/env.js');
     const env = loadGatewayEnv({
       DATABASE_URL: 'postgres://x',
       REDIS_URL: 'redis://x',

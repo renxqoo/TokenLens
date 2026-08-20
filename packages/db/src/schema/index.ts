@@ -29,3 +29,4 @@ export * from './notifications.js';
 export * from './generation-tasks.js';
 export * from './wallet.js';
 export * from './ledger-operations.js';
+export * from './fx.js';

@@ -24,10 +24,12 @@ export interface ReceiptParams {
   durationMs: number;
   /** 原始请求体——计量描述符的参数源（audioSeconds / n / input） */
   body: Record<string, unknown>;
+  /** 请求时点生效汇率快照（repos.fx.current；null = 未配置/拉取失败——追溯降级） */
+  fx?: { rate: string; fxRateId: number } | null;
   /** 上游响应体——计量描述符的实值源（images 的 data.length）；估算分支可缺 */
   responseBody?: unknown;
   usage:
-    | { estimated: false; inputTokens: number; cachedInputTokens: number; outputTokens: number }
+    | { estimated: false; inputTokens: number; cachedInputTokens: number; outputTokens: number; cacheWriteTokens?: number }
     | { estimated: true; inputTokens: number; outputTokens?: number };
 }
 
@@ -57,11 +59,13 @@ export function buildReceipt(params: ReceiptParams): UsageReceipt {
           cachedInputTokens: params.usage.cachedInputTokens,
           outputTokens: params.usage.outputTokens,
           estimated: false,
+          ...((params.usage.cacheWriteTokens ?? 0) > 0 ? { cacheWriteTokens: params.usage.cacheWriteTokens } : {}),
           ...(units > 0 ? { units } : {}),
         },
     inputPrice: candidate.inputPrice,
     outputPrice: candidate.outputPrice,
     cacheInputPrice: candidate.cacheInputPrice,
+    cacheWritePrice: candidate.cacheWritePrice ?? '0',
     unitPrice: candidate.unitPrice ?? '0',
     coefficient: candidate.coefficient,
     durationMs: params.durationMs,
@@ -69,6 +73,8 @@ export function buildReceipt(params: ReceiptParams): UsageReceipt {
     streamAborted: false,
     mappingId: candidate.mappingId,
     billingPolicyFingerprint: candidate.billingPolicyFingerprint,
+    fxRate: params.fx?.rate ?? null,
+    fxRateId: params.fx?.fxRateId ?? null,
     ...(params.usage.estimated ? { estimatedFor: 'usage_missing_nonstream' } : {}),
     ...(params.usage.estimated ? { bytesRelayed: 0 } : {}),
   };

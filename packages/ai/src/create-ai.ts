@@ -175,7 +175,7 @@ export function createAi(config: AiConfigInput, deps: AiDeps, options?: AiOption
           channelKey: key,
           usage: outcome.value.usage,
           durationMs,
-          ...(contextOverflow ? { contextOverflow: true } : {}),
+          ...(contextOverflow ? { contextOverflow: true, model: input.ctx.model } : {}),
         });
         return {
           status: 'success',

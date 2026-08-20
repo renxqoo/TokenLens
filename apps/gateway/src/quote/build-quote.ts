@@ -92,6 +92,7 @@ export function createBuildQuote(deps: { db: Db; repos?: Repositories }) {
         inputPrice: mapping.inputPrice,
         outputPrice: mapping.outputPrice,
         cacheInputPrice: mapping.cacheInputPrice,
+        cacheWritePrice: mapping.cacheWritePrice,
         unitPrice: resolvedUnitPrice,
         inputTokenUpperBound: input.inputTokenUpperBound,
         pricingUnit: mapping.pricingUnit,

@@ -22,9 +22,16 @@ export interface AmountInput {
   inputTokens: number;
   cachedInputTokens: number;
   outputTokens: number;
+  /**
+   * 缓存写入 token（Anthropic cache_creation 5m+1h 合计归一）。
+   * 口径：与 cached 同为输入的互斥分段——uncached = input − cached − cacheWrite。
+   */
+  cacheWriteTokens?: number;
   /** 输入价（元/百万 token） */
   inputPrice: Decimal | string | number;
   cacheInputPrice: Decimal | string | number;
+  /** 缓存写单价（0/缺省 = 不收缓存写费） */
+  cacheWritePrice?: Decimal | string | number;
   outputPrice: Decimal | string | number;
   /** 单位计量（次数/张数/秒数/字符数；token 模型传 0） */
   units?: number;
@@ -46,11 +53,21 @@ export function calcAmount(input: AmountInput): Decimal {
   const coefficient = new Decimal(input.coefficient as string);
   // coefficient ≤ 0 → 钳 0（配置错误不得免费/反向；授权侧另结构拒绝）
   const coeff = coefficient.lte(0) ? new Decimal(0) : coefficient;
+  // 三段互斥（uncached / cacheRead / cacheWrite），合计夹到 ≤ input
+  // （防异常上游返回 cached+write > total 导致负未缓存 + 超大缓存双计）
   const cached = Math.min(safe(input.cachedInputTokens), inputTokens);
-  const uncached = inputTokens - cached;
+  const cacheWrite = Math.min(safe(input.cacheWriteTokens ?? 0), inputTokens - cached);
+  const uncached = inputTokens - cached - cacheWrite;
+  // 写价 0/缺省 = 未配置 → 与输入价同值（cacheInputPrice 同款约定：
+  // 未配置不得让写 token 逃逸计费——按普通输入计）
+  const configuredWritePrice = new Decimal((input.cacheWritePrice ?? 0) as string);
+  const effectiveWritePrice = configuredWritePrice.gt(0)
+    ? configuredWritePrice
+    : new Decimal(input.inputPrice as string);
   const tokenBase = new Decimal(input.inputPrice as string)
     .times(uncached)
     .plus(new Decimal(input.cacheInputPrice as string).times(cached))
+    .plus(effectiveWritePrice.times(cacheWrite))
     .plus(new Decimal(input.outputPrice as string).times(outputTokens));
   const unitPrice = new Decimal((input.unitPrice ?? 0) as string);
   const unitBase = unitPrice.lt(0) ? new Decimal(0) : unitPrice.times(safe(input.units ?? 0));
@@ -62,8 +79,9 @@ export interface ReservationEstimateInput {
   estimatedInputTokens: number;
   maxOutputTokens: number;
   inputPrice: Decimal | string | number;
-  /** 授权时无法预知缓存命中量——输入按两种单价中较高者覆盖 */
+  /** 授权时无法预知缓存命中/写入量——输入按各单价中最高者覆盖（cacheWrite 可超输入价：Anthropic 1.25×/2×） */
   cacheInputPrice?: Decimal | string | number;
+  cacheWritePrice?: Decimal | string | number;
   outputPrice: Decimal | string | number;
   /** 单位计量上界（如 images 的 n；token 模型 0） */
   unitUpperBound?: number;
@@ -81,6 +99,7 @@ export function estimateMaxCost(input: ReservationEstimateInput): Decimal {
   const conservativeInputPrice = Decimal.max(
     new Decimal(input.inputPrice as string),
     new Decimal((input.cacheInputPrice ?? input.inputPrice) as string),
+    new Decimal((input.cacheWritePrice ?? input.inputPrice) as string),
   );
   const tokenBase = conservativeInputPrice
     .times(safe(input.estimatedInputTokens))

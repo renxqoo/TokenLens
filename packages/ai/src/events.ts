@@ -87,4 +87,6 @@ export type AiEvent =
        * 计费仍按供应商 usage（正确口径）；旗标供网关日志/告警消费。
        */
       contextOverflow?: boolean;
+      /** 溢出时的模型名（告警消费；仅 contextOverflow 时携带） */
+      model?: string;
     };

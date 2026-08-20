@@ -289,6 +289,7 @@ export interface AdminModelRow {
   inputPrice: string;
   outputPrice: string;
   cacheInputPrice: string;
+  cacheWritePrice: string;
   isFree: boolean;
   contextLength: number | null;
   fallbackModels: string | null;

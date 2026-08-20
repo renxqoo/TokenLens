@@ -38,6 +38,13 @@ export const modelMappings = pgTable(
       .notNull()
       .default('0'),
     /**
+     * 官方缓存写单价（元/百万 token；Anthropic 5m 档 1.25×/1h 档 2× 输入价）。
+     * 0 = 该模型不收缓存写费（维持免计）。系数体系同 input/output：用户价 = 本价 × 费率卡系数。
+     */
+    cacheWritePrice: numeric('cache_write_price', { precision: 38, scale: 18 })
+      .notNull()
+      .default('0'),
+    /**
      * 计费单位（单一真相，2026-08 单位计费扩展）：
      * token 按 token（三元组计价）/ request 按次 / image 按张 / second 按音频秒 / char 按字符。
      * 非 token 单位使用 unit_price 计价，token 三元组对该模型不参与结算。
@@ -97,7 +104,7 @@ export const modelMappings = pgTable(
     // 价格非负（入口 zod 已拦，DB 兜底——负价经 calcAmount 钳 0 会静默免费）
     check(
       'model_mappings_prices_nonnegative_ck',
-      sql`${t.inputPrice} >= 0 and ${t.outputPrice} >= 0 and ${t.cacheInputPrice} >= 0 and ${t.unitPrice} >= 0`,
+      sql`${t.inputPrice} >= 0 and ${t.outputPrice} >= 0 and ${t.cacheInputPrice} >= 0 and ${t.cacheWritePrice} >= 0 and ${t.unitPrice} >= 0`,
     ),
     // 计费单位词表（新增单位须同步 PRICING_UNITS 常量与计价公式）
     check(

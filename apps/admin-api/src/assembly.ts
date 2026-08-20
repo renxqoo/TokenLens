@@ -36,9 +36,11 @@ import { createModelsService } from './services/models.service.js';
 import { createRateCardsService } from './services/rate-cards.service.js';
 import {
   createCatalogService,
+  MODELS_DEV_SOURCE,
   OPENROUTER_SOURCE,
   type CatalogSource,
 } from './services/catalog.service.js';
+import { createFxService } from './services/fx.service.js';
 import { createFundsService } from './services/funds.service.js';
 import { createUsersService } from './services/users.service.js';
 import { createAdminKeysService } from './services/keys.service.js';
@@ -60,6 +62,7 @@ export interface AdminApiAssembly {
   models: ReturnType<typeof createModelsService>;
   rateCards: ReturnType<typeof createRateCardsService>;
   catalog: ReturnType<typeof createCatalogService>;
+  fx: ReturnType<typeof createFxService>;
   users: ReturnType<typeof createUsersService>;
   funds: ReturnType<typeof createFundsService>;
   adminKeys: ReturnType<typeof createAdminKeysService>;
@@ -134,14 +137,16 @@ export function assembleAdminApi(
     createTester,
   });
   const rateCards = createRateCardsService({ db });
+  const fx = createFxService({ db });
   const catalog = createCatalogService({
     db,
     redis,
-    sources: [OPENROUTER_SOURCE] satisfies readonly CatalogSource[],
+    sources: [OPENROUTER_SOURCE, MODELS_DEV_SOURCE] satisfies readonly CatalogSource[],
     cacheTtlMs: config.CATALOG_CACHE_TTL_MS,
     freeChannelRpm: config.CATALOG_FREE_CHANNEL_RPM,
     freeChannelBudget: config.CATALOG_FREE_CHANNEL_BUDGET,
     encryptionKey: config.ENCRYPTION_KEY,
+    fx,
   });
 
   // 资金面：管理面经手三类业务域（admin 调账/赠送、订阅收款、加油包发放）
@@ -190,6 +195,7 @@ export function assembleAdminApi(
     models,
     rateCards,
     catalog,
+    fx,
     users,
     funds,
     adminKeys,

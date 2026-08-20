@@ -47,7 +47,7 @@ export function createUpstreamAdapter(deps: {
             rawBody: result.rawBody,
             rawContentType: result.rawContentType ?? 'application/octet-stream',
             ...(result.usage && !result.usage.estimated
-              ? { usage: { inputTokens: result.usage.inputTokens, cachedInputTokens: result.usage.cachedInputTokens, outputTokens: result.usage.outputTokens } }
+              ? { usage: { inputTokens: result.usage.inputTokens, cachedInputTokens: result.usage.cachedInputTokens, outputTokens: result.usage.outputTokens, ...(result.usage.cacheWriteTokens != null ? { cacheWriteTokens: result.usage.cacheWriteTokens } : {}) } }
               : {}),
           };
         }
@@ -60,6 +60,7 @@ export function createUpstreamAdapter(deps: {
                   inputTokens: result.usage.inputTokens,
                   cachedInputTokens: result.usage.cachedInputTokens,
                   outputTokens: result.usage.outputTokens,
+                  ...(result.usage.cacheWriteTokens != null ? { cacheWriteTokens: result.usage.cacheWriteTokens } : {}),
                 },
               }
             : {}),
@@ -123,6 +124,7 @@ export function createUpstreamAdapter(deps: {
                             cachedInputTokens: event.usage.cachedInputTokens,
                             outputTokens: event.usage.outputTokens,
                             estimated: event.usage.estimated,
+                            ...(event.usage.cacheWriteTokens != null ? { cacheWriteTokens: event.usage.cacheWriteTokens } : {}),
                           },
                         }
                       : {}),

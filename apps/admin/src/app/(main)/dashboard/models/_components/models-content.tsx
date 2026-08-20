@@ -62,6 +62,7 @@ const createSchema = z.object({
   inputPrice: numericText({ message: '请输入有效价格' }).refine((v) => v >= 0, '价格不能为负'),
   outputPrice: numericText({ message: '请输入有效价格' }).refine((v) => v >= 0, '价格不能为负'),
   cacheInputPrice: numericText({ message: '请输入有效价格' }).refine((v) => v >= 0, '价格不能为负'),
+  cacheWritePrice: numericText({ message: '请输入有效价格' }).refine((v) => v >= 0, '价格不能为负'),
   isFree: z.boolean().optional(),
   contextLength: numericText({ message: '请输入有效 token 数' }).refine(
     (v) => v === 0 || Number.isInteger(v),
@@ -175,6 +176,7 @@ export function CreateModelDialog() {
       inputPrice: '',
       outputPrice: '',
       cacheInputPrice: '',
+      cacheWritePrice: '',
       isFree: false,
       contextLength: '',
     },
@@ -189,6 +191,7 @@ export function CreateModelDialog() {
         inputPrice: Number(values.inputPrice),
         outputPrice: Number(values.outputPrice),
         cacheInputPrice: Number(values.cacheInputPrice),
+        ...(values.cacheWritePrice !== '' ? { cacheWritePrice: Number(values.cacheWritePrice) } : {}),
         isFree: values.isFree ?? false,
         contextLength: values.contextLength === '' ? null : Number(values.contextLength),
       });
@@ -233,6 +236,7 @@ const editSchema = z.object({
   inputPrice: numericText({ message: '请输入有效价格' }).refine((v) => v >= 0, '价格不能为负'),
   outputPrice: numericText({ message: '请输入有效价格' }).refine((v) => v >= 0, '价格不能为负'),
   cacheInputPrice: numericText({ message: '请输入有效价格' }).refine((v) => v >= 0, '价格不能为负'),
+  cacheWritePrice: numericText({ message: '请输入有效价格' }).refine((v) => v >= 0, '价格不能为负'),
   isFree: z.boolean().optional(),
   contextLength: numericText({ message: '请输入有效 token 数' }).refine(
     (v) => v === 0 || Number.isInteger(v),
@@ -270,6 +274,7 @@ function EditModelDialog({ model }: { model: AdminModelRow }) {
       inputPrice: model.inputPrice ?? '',
       outputPrice: model.outputPrice ?? '',
       cacheInputPrice: model.cacheInputPrice ?? '',
+      cacheWritePrice: model.cacheWritePrice ?? '',
       isFree: model.isFree ?? false,
       contextLength: model.contextLength == null ? '' : String(model.contextLength),
       fallbackModels: model.fallbackModels ?? '',
@@ -290,6 +295,7 @@ function EditModelDialog({ model }: { model: AdminModelRow }) {
         inputPrice: Number(values.inputPrice),
         outputPrice: Number(values.outputPrice),
         cacheInputPrice: Number(values.cacheInputPrice),
+        ...(values.cacheWritePrice !== '' ? { cacheWritePrice: Number(values.cacheWritePrice) } : {}),
         isFree: values.isFree ?? false,
         contextLength: values.contextLength === '' ? null : Number(values.contextLength),
         fallbackModels: values.fallbackModels?.trim() || undefined,
@@ -404,6 +410,13 @@ function ModelForm({
             name="cacheInputPrice"
             label="缓存价"
             id="m-cache"
+            step="0.0001"
+          />
+          <NumberField
+            control={form.control}
+            name="cacheWritePrice"
+            label="缓存写价"
+            id="m-cache-w"
             step="0.0001"
           />
           <NumberField

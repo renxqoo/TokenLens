@@ -1,0 +1,89 @@
+name: CI
+
+# 四门流水线：typecheck / lint / build / test（共享包 + 四应用）
+# + 覆盖率门禁（ai 包与 admin-api 包带 90/85 阈值）。
+# 集成测试需要 PG + Redis（service containers，每 PR 独享无共享库竞态）。
+# E2E 独立通道（依赖外网与 dev 库）不进 CI——与本地约定一致。
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ai_gateway
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/ai_gateway
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci-test-secret-0123456789abcdef
+      ADMIN_JWT_SECRET: ci-admin-test-secret-0123456789abcd
+      ENCRYPTION_KEY: ci-encryption-key-0123456789abcdef
+      # mock 上游在回环的 SSRF dev 逃生门——CI 专用，非生产
+      GATEWAY_AI_ALLOW_LOCAL_URL: true
+      WORKER_AI_ALLOW_LOCAL_URL: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 构建（provision/migrate 走 dist/migrate-cli.js，须先出产物）
+        run: pnpm exec turbo run build --filter=@ai-gateway/identity-core --filter=@ai-gateway/ledger-core --filter=@ai-gateway/wallet
+
+      # 根四段链：identity-core/ledger-core provision → db migrate → wallet migrate。
+      # 只跑 db 段会在全新库上踩 0055（回填 identity_session_anchors，表由 provision 建）。
+      - name: 迁移（先 provision 后 migrate，全新库建表）
+        run: pnpm db:migrate
+
+      - name: 四门（typecheck / lint / build / test）
+        run: pnpm exec turbo run typecheck lint build test
+
+      - name: 覆盖率门禁（ai 包 90/85 + admin-api 90/85）
+        run: |
+          pnpm --filter @ai-gateway/ai test:coverage
+          pnpm --filter @ai-gateway/admin-api test:coverage
+
+      - name: 上传覆盖率报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            packages/ai/coverage
+            apps/admin-api/coverage
+          retention-days: 7

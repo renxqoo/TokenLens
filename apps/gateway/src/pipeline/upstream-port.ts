@@ -19,6 +19,8 @@ export interface UpstreamUsage {
   inputTokens: number;
   cachedInputTokens: number;
   outputTokens: number;
+  /** 缓存写入 token（Anthropic cache_creation 归一；缺省 = 无） */
+  cacheWriteTokens?: number;
 }
 
 export type UpstreamResult =
@@ -49,7 +51,7 @@ export type UpstreamStreamEvent =
   | { type: 'failed'; code?: string; message?: string; deadCredential?: boolean; status?: number }
   | {
       type: 'success';
-      usage?: UpstreamUsage & { estimated: boolean };
+      usage?: UpstreamUsage & { estimated: boolean } & { cacheWriteTokens?: number };
       terminated?: string;
       bytesRelayed?: number;
       /** 扫描器累计的输出文本（usage 缺失/取消时的输出 token 估算源） */

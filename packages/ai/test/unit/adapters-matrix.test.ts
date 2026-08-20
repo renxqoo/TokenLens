@@ -73,7 +73,7 @@ describe('gemini / bedrock / azure 适配器分支', () => {
     expect(adapter.translateResponseBody({ content: [] })).toBeDefined();
     await expect(new Response(adapter.translateUpstreamStream(emptyStream())).text()).resolves.toContain('[DONE]');
     expect(adapter.extractUsage({ usage: { input_tokens: 4, output_tokens: 2, cache_read_input_tokens: 1 } }))
-      .toMatchObject({ inputTokens: 4, cachedInputTokens: 1, outputTokens: 2 });
+      .toMatchObject({ inputTokens: 5, cachedInputTokens: 1, outputTokens: 2 }); // 总输入 4+1
     expect(adapter.extractUsage({})).toBeNull();
     expect(adapter.probeRequests(channel)).toEqual([{ path: '/models', headers: {} }]);
   });

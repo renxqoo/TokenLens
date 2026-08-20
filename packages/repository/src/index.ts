@@ -30,6 +30,7 @@ import { SubscriptionRepository } from './subscription.repo.js';
 import { ChannelRepository } from './channel.repo.js';
 import { OperationsRepository } from './operations.repo.js';
 import { RatingRepository } from './rating.repo.js';
+import { FxRepository } from './fx.repo.js';
 import { HealthRepository } from './health.repo.js';
 import { ModelMappingRepository } from './model-mapping.repo.js';
 import { GenerationTaskRepository } from './generation-task.repo.js';
@@ -48,6 +49,7 @@ import { AuditLogRepository } from './audit-log.repo.js';
 
 export {
   WalletRepository,
+  FxRepository,
   BillingRequestRepository,
   BillingReservationRepository,
   UsageLogRepository,
@@ -87,7 +89,8 @@ export type * from './org-member.repo.js';
 export type * from './subscription.repo.js';
 export type * from './channel.repo.js';
 export type * from './operations.repo.js';
-export type * from './rating.repo.js';
+export type * from './fx.repo.js';
+export { CATALOG_FX_CONFIG_KEY, FX_CACHE_MS } from './fx.repo.js';
 export type * from './health.repo.js';
 export type * from './model-mapping.repo.js';
 export type * from './generation-task.repo.js';
@@ -119,6 +122,7 @@ export interface Repositories {
   channel: ChannelRepository;
   operations: OperationsRepository;
   rating: RatingRepository;
+  fx: FxRepository;
   health: HealthRepository;
   modelMapping: ModelMappingRepository;
   generationTask: GenerationTaskRepository;
@@ -152,6 +156,7 @@ export function createRepositories(): Repositories {
     channel: new ChannelRepository(),
     operations: new OperationsRepository(),
     rating: new RatingRepository(),
+    fx: new FxRepository(),
     health: new HealthRepository(),
     modelMapping: new ModelMappingRepository(),
     generationTask: new GenerationTaskRepository(),

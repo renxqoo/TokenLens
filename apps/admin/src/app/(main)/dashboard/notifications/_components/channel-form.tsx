@@ -14,6 +14,7 @@ const EVENTS = [
   { id: 'billing_dead', label: '计费死单' },
   { id: 'reconcile_discrepancy', label: '对账差异' },
   { id: 'balance_low', label: '余额预警' },
+  { id: 'context_overflow', label: '静默溢出' },
 ];
 
 export function ChannelForm() {

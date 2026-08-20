@@ -11,6 +11,7 @@ export interface ModelCreateInput {
   inputPrice: number;
   outputPrice: number;
   cacheInputPrice?: number;
+  cacheWritePrice?: number;
   isFree?: boolean;
   contextLength?: number | null;
   billingPolicy?: Record<string, unknown> | null;
@@ -29,6 +30,7 @@ export async function createModelAction(input: ModelCreateInput): Promise<{ erro
         inputPrice: input.inputPrice,
         outputPrice: input.outputPrice,
         cacheInputPrice: input.cacheInputPrice ?? 0,
+        ...(input.cacheWritePrice != null ? { cacheWritePrice: input.cacheWritePrice } : {}),
         isFree: input.isFree ?? false,
         ...(input.contextLength != null ? { contextLength: input.contextLength } : {}),
         billingPolicy: input.billingPolicy ?? null,
@@ -48,6 +50,7 @@ export interface ModelUpdateInput {
   inputPrice?: number;
   outputPrice?: number;
   cacheInputPrice?: number;
+  cacheWritePrice?: number;
   isFree?: boolean;
   contextLength?: number | null;
   fallbackModels?: string;

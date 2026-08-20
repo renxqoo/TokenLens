@@ -5,7 +5,7 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
-import { createDb, rateCardCoefficients, rateCards, type Db } from '@ai-gateway/db';
+import { createDb, modelMappings, rateCardCoefficients, rateCards, type Db } from '@ai-gateway/db';
 import { createRepositories, type RepoContext } from '../index.js';
 
 const db: Db = createDb(
@@ -30,10 +30,15 @@ describe('RatingRepository.loadRateCardCoefficients', () => {
       .values({ name: `v2rate-${randomUUID().slice(0, 8)}`, status: 0 })
       .returning({ id: rateCards.id });
     cardId = card!.id;
-    // scope='model' 行有 FK 到 model_mappings——取库中任一现存映射（dev 库有种子数据）
-    const mapping = await db.query.modelMappings.findFirst({ columns: { id: true } });
-    if (!mapping) throw new Error('rating-repo: dev 库无 model_mappings 种子，无法测 model 系数行');
-    modelMappingId = mapping.id;
+    // scope='model' 行有 FK 到 model_mappings——自建自有映射（不依赖 dev 库种子残留，CI 全新库可跑）
+    const [mapping] = await db
+      .insert(modelMappings)
+      .values({
+        externalName: `v2map-${randomUUID().slice(0, 8)}`,
+        realModel: 'v2-rating-repo-real',
+      })
+      .returning({ id: modelMappings.id });
+    modelMappingId = mapping!.id;
     await db.insert(rateCardCoefficients).values([
       { rateCardId: cardId, scope: 'global', modelMappingId: null, groupKey: null, coefficient: '2' },
       { rateCardId: cardId, scope: 'model', modelMappingId, groupKey: null, coefficient: '0.5' },
@@ -44,6 +49,7 @@ describe('RatingRepository.loadRateCardCoefficients', () => {
   afterAll(async () => {
     await db.delete(rateCardCoefficients).where(eq(rateCardCoefficients.rateCardId, cardId));
     await db.delete(rateCards).where(eq(rateCards.id, cardId));
+    await db.delete(modelMappings).where(eq(modelMappings.id, modelMappingId));
     await db.$client.end().catch(() => {});
   });
 

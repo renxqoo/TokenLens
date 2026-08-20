@@ -25,6 +25,8 @@ export default defineConfig({
   test: {
     // 集成套件共享单实例 PG：文件级串行换确定性（用户/订单清理互不踩踏）
     fileParallelism: false,
+    // DB 集成单测：CI 慢机满载下往返时延放大，超时对齐 wallet 包 15s 约定
+    testTimeout: 15_000,
     // E2E（真服务进程/真上游）走独立通道 test:e2e
     exclude: ['**/node_modules/**', '**/dist/**', '**/e2e-*.test.ts'],
     env: rootEnv,

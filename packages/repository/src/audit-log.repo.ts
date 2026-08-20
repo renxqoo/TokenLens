@@ -20,6 +20,24 @@ export interface AuditLogRow {
 }
 
 export class AuditLogRepository {
+  /** 目录定价溯源：某对外名历次目录导入/改价的审计行（detail.models 含该名） */
+  async listCatalogPriceHistory(
+    c: RepoContext,
+    input: { externalName: string; limit?: number },
+  ): Promise<AuditLogRow[]> {
+    return c.db
+      .select()
+      .from(auditLogs)
+      .where(
+        and(
+          sql`${auditLogs.action} in ('model_catalog.import', 'model_catalog.import_draft')`,
+          sql`${auditLogs.detail} -> 'models' @> ${JSON.stringify([{ externalName: input.externalName }])}::jsonb`,
+        ),
+      )
+      .orderBy(desc(auditLogs.id))
+      .limit(input.limit ?? 50);
+  }
+
   /** 全局审计列表：q 命中 action/targetType/targetId */
   async list(
     c: RepoContext,

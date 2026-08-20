@@ -10,7 +10,7 @@ import type { RunContext } from '@ai-gateway/service';
 import { AppError } from '../http/error-map.js';
 import { encrypt } from '@ai-gateway/core';
 
-export const NOTIFY_EVENTS = ['channel_disabled', 'reconcile_discrepancy', 'billing_dead', 'balance_low'] as const;
+export const NOTIFY_EVENTS = ['channel_disabled', 'reconcile_discrepancy', 'billing_dead', 'balance_low', 'context_overflow'] as const;
 export type NotifyEvent = (typeof NOTIFY_EVENTS)[number];
 
 export interface NotificationChannelInput {

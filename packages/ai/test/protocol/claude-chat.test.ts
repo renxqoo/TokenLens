@@ -88,13 +88,15 @@ describe('claude ⇄ chat codec', () => {
     expect(chat.choices[0].message.content).toBe('Hi ');
     expect(chat.choices[0].message.tool_calls[0].function.name).toBe('get_weather');
     expect(chat.choices[0].finish_reason).toBe('tool_calls');
-    expect(chat.usage.prompt_tokens).toBe(25);
+    expect(chat.usage.prompt_tokens).toBe(40);
+    expect(chat.usage.prompt_tokens).toBe(40);
     expect(chat.usage.completion_tokens).toBe(150);
     expect(chat.usage.prompt_tokens_details.cached_tokens).toBe(10);
     expect(claudeUsageToUsage(CLAUDE_RESPONSE.usage)).toEqual({
-      promptTokens: 25,
+      promptTokens: 40, // 总输入 = 25(未缓存) + 10(读) + 5(写)——OpenAI 口径补齐
       completionTokens: 150,
-      cachedTokens: 10, cacheCreationTokens: 5,
+      cachedTokens: 10,
+      cacheCreationTokens: 5,
     });
   });
 

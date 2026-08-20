@@ -281,6 +281,7 @@ describe('plans/redeem/channels/models 补充分支', () => {
     ).toBe(400);
     // 服务层直调覆盖 catalog_empty 分支（直调方绕过 zod 的防线归服务守卫）
     const { createCatalogService } = await import('../services/catalog.service.js');
+    const { createFxService } = await import('../services/fx.service.js');
     const catalog = createCatalogService({
       db,
       redis: null,
@@ -289,6 +290,7 @@ describe('plans/redeem/channels/models 补充分支', () => {
       freeChannelRpm: 20,
       freeChannelBudget: '1000000',
       encryptionKey: 'a'.repeat(32),
+      fx: createFxService({ db, fetchImpl: async () => new Response('{"rates":{"CNY":7.2}}', { status: 200 }) }),
     });
     await expect(
       catalog.import({ requestId: 't', actor: { kind: 'admin', id: 0 }, traceParent: null }, {

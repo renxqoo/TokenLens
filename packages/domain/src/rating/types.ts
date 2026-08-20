@@ -26,6 +26,8 @@ export interface UsageReceipt {
     cachedInputTokens: number;
     outputTokens: number;
     estimated: boolean;
+    /** 缓存写入 token（Anthropic cache_creation 5m+1h 合计归一；0/缺省 = 无） */
+    cacheWriteTokens?: number;
     /** 单位计量（按次/张/秒/字符；token 模型为 0）——与 unitPrice 快照配对结算 */
     units?: number;
   };
@@ -33,6 +35,8 @@ export interface UsageReceipt {
   inputPrice: string;
   outputPrice: string;
   cacheInputPrice: string;
+  /** 缓存写单价快照（0/缺省 = 不收缓存写费） */
+  cacheWritePrice?: string;
   /** 单位单价快照（元/单位；token 模型为 '0'） */
   unitPrice?: string;
   /** 费率卡系数（小数，如 1.0） */
@@ -45,6 +49,12 @@ export interface UsageReceipt {
   mappingId: number;
   /** 多模态策略快照指纹；纯文本为 null */
   billingPolicyFingerprint: string | null;
+  /**
+   * 请求时点生效基准汇率（1 USD = ? CNY）与 fx_rates 行 id——账单级追溯：
+   * 这笔账的价格快照从哪个汇率环境产生一查便知；缺省 = fx 机制上线前的历史口径。
+   */
+  fxRate?: string | null;
+  fxRateId?: number | null;
   /**
    * 估算结算归属（政策拍板）：用户侧取消 ∪ 完成缺 usage。
    * usage.estimated=true 时必填且必须属于 ESTIMATE_ATTRIBUTIONS（验收结构性把关）。
@@ -88,6 +98,8 @@ export interface BillingQuoteCandidate {
   inputPrice: string;
   outputPrice: string;
   cacheInputPrice: string;
+  /** 缓存写单价（0/缺省 = 不收） */
+  cacheWritePrice?: string;
   /** 单位单价（元/单位；token 模型为 '0'）——预扣与结算共用 */
   unitPrice?: string;
   coefficient: string;
@@ -101,6 +113,12 @@ export interface BillingQuoteCandidate {
   reservation?: ReservationPolicyConfig;
   /** 多模态策略快照指纹；纯文本为 null */
   billingPolicyFingerprint: string | null;
+  /**
+   * 请求时点生效基准汇率（1 USD = ? CNY）与 fx_rates 行 id——账单级追溯：
+   * 这笔账的价格快照从哪个汇率环境产生一查便知；缺省 = fx 机制上线前的历史口径。
+   */
+  fxRate?: string | null;
+  fxRateId?: number | null;
 }
 
 /** 已按供应商参数规则归一化后的可信报价输入 */

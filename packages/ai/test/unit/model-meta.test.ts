@@ -57,7 +57,8 @@ describe('静默溢出判定（detectSilentOverflow）', () => {
 });
 
 describe('BPE 分词器（js-tiktoken 主路径）', () => {
-  it('o200k 与 cl100k 对 CJK 编码不同（族解析正确性）；无模型/超长 → null 回落启发式', () => {
+  // js-tiktoken 首次 getEncoding 要解析整张 rank 表——CI 慢机满载并行下可超 5s 默认值
+  it('o200k 与 cl100k 对 CJK 编码不同（族解析正确性）；无模型/超长 → null 回落启发式', { timeout: 30_000 }, () => {
     const o = tokenCountOf('你好世界', 'gpt-4o');
     const c = tokenCountOf('你好世界', 'gpt-4');
     expect(o).not.toBeNull();
@@ -68,7 +69,7 @@ describe('BPE 分词器（js-tiktoken 主路径）', () => {
     expect(tokenCountOf('', 'gpt-4o')).toBeNull();
   });
 
-  it('estimateInputTokens 带模型走精确路径（英文 tokenize ≈ 词数上界），无模型走启发式', () => {
+  it('estimateInputTokens 带模型走精确路径（英文 tokenize ≈ 词数上界），无模型走启发式', { timeout: 30_000 }, () => {
     const withModel = estimateInputTokens(
       { messages: [{ role: 'user', content: 'hello world' }] },
       { model: 'gpt-4o' },
@@ -118,9 +119,9 @@ describe('cache_write 数据捕获（计费消费属独立资金工单）', () =
         ctx: { requestId: 'cw-1', model: 'claude-x', providerName: 'anthropic', endpoint: 'chat' },
       });
       expect(result.status).toBe('success');
-      // 5m 档 6 + 1h 档 2 = 8；cache read 4 照旧
+      // 总输入 = 10(未缓存) + 4(读) + 8(写) = 22；写 = 5m 档 6 + 1h 档 2
       if (result.status === 'success') {
-        expect(result.usage).toMatchObject({ inputTokens: 10, cachedInputTokens: 4, outputTokens: 3, cacheWriteTokens: 8 });
+        expect(result.usage).toMatchObject({ inputTokens: 22, cachedInputTokens: 4, outputTokens: 3, cacheWriteTokens: 8 });
       }
       const success = events.find((e) => e.type === 'success');
       expect(success).toMatchObject({ type: 'success' });
@@ -154,7 +155,7 @@ describe('cache_write 数据捕获（计费消费属独立资金工单）', () =
       const success = events.find((e) => e.type === 'success');
       expect(success).toMatchObject({
         type: 'success',
-        usage: { inputTokens: 7, cachedInputTokens: 2, outputTokens: 2, cacheWriteTokens: 5 },
+        usage: { inputTokens: 14, cachedInputTokens: 2, outputTokens: 2, cacheWriteTokens: 5 },
       });
     } finally {
       await upstream.close();

@@ -140,3 +140,4 @@ describe('厂商档案 vendor（词表单一真相 = ai 包 VENDOR_PROFILES）',
     expect(((await res.json()) as { vendor: string | null }).vendor).toBeNull();
   });
 });
+

@@ -49,6 +49,10 @@ export const usageLogs = pgTable(
     inputTokens: bigint('input_tokens', { mode: 'number' }).notNull().default(0),
     /** 缓存命中输入（usage 无缓存字段时为 0） */
     cachedInputTokens: bigint('cached_input_tokens', { mode: 'number' }).notNull().default(0),
+    /** 缓存写入 token（Anthropic cache_creation 5m+1h 合计；计量与审计列） */
+    cacheWriteTokens: bigint('cache_write_tokens', { mode: 'number' }).notNull().default(0),
+    /** 缓存写单价快照（元/百万 token） */
+    cacheWritePrice: numeric('cache_write_price', { precision: 38, scale: 18 }).notNull().default('0'),
     outputTokens: bigint('output_tokens', { mode: 'number' }).notNull().default(0),
     /**
      * 单位计费计量（2026-08 扩展）：按次=次数 / 按张=张数 / 按秒=音频秒数 / 按字符=字符数。
@@ -73,6 +77,13 @@ export const usageLogs = pgTable(
       .default('0'),
     /** 上游成本估算（元，官方价×实际用量快照；供应商对账数据基础） */
     upstreamCost: numeric('upstream_cost', { precision: 38, scale: 18 }).notNull().default('0'),
+    /**
+     * 请求时点生效汇率快照（1 USD = ? CNY）：账单级追溯——这笔账的价格快照
+     * 从哪个汇率环境产生一查便知；NULL = 历史行（fx 机制上线前）无此口径。
+     */
+    fxRate: numeric('fx_rate', { precision: 38, scale: 18 }),
+    /** 指向 fx_rates 追加表的具体行（来源/时间/操作人的真相） */
+    fxRateId: bigint('fx_rate_id', { mode: 'number' }),
     /** 套餐额度承担部分（默认 0） */
     planAmount: numeric('plan_amount', { precision: 38, scale: 18 }).notNull().default('0'),
     /** 余额承担部分（默认 0） */

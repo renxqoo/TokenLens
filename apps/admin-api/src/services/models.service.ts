@@ -39,6 +39,7 @@ export interface ModelPricesInput {
   inputPrice: string;
   outputPrice: string;
   cacheInputPrice: string;
+  cacheWritePrice: string;
 }
 
 export interface ModelsService {
@@ -148,6 +149,7 @@ export function createModelsService(deps: ModelsServiceDeps): ModelsService {
           inputPrice: input.prices.inputPrice,
           outputPrice: input.prices.outputPrice,
           cacheInputPrice: input.prices.cacheInputPrice,
+          cacheWritePrice: input.prices.cacheWritePrice ?? '0',
           isFree,
           billingPolicy: (input.billingPolicy ?? null) as Record<string, unknown> | null,
           rpmLimit: input.rpmLimit ?? null,
@@ -174,6 +176,7 @@ export function createModelsService(deps: ModelsServiceDeps): ModelsService {
         inputPrice: input.patch.prices?.inputPrice ?? existing.inputPrice,
         outputPrice: input.patch.prices?.outputPrice ?? existing.outputPrice,
         cacheInputPrice: input.patch.prices?.cacheInputPrice ?? existing.cacheInputPrice,
+        cacheWritePrice: input.patch.prices?.cacheWritePrice ?? existing.cacheWritePrice,
       };
       const mergedFree = input.patch.isFree ?? existing.isFree;
       assertFreeConsistency(mergedFree, mergedPrices);

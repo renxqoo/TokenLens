@@ -22,6 +22,7 @@ import {
 import { createBuildQuote } from './quote/build-quote.js';
 import { createResolveChannels } from './routing/resolve-channels.js';
 import { createRunChat } from './pipeline/run-chat.js';
+import { wireContextOverflowAlert } from './ai/overflow-alert.js';
 import { createUpstreamAdapter } from './pipeline/upstream-adapter.js';
 import { createTaskAdapter } from './generation/task-adapter.js';
 import { createSubmitGeneration } from './generation/submit.js';
@@ -78,6 +79,9 @@ export function assembleGateway(config: GatewayConfig): GatewayAssembly {
     },
     { ...storages },
   );
+
+  // 静默溢出告警（P1#4）：success 事件旗标 → notify_outbox（worker 按渠道订阅投递）
+  wireContextOverflowAlert(ai, db);
 
   // 限流闸与鉴权爆破防护（Redis 必配形态；fail-closed 语义在 core 模块默认）
   const limiter = createSlidingWindowLimiter(redis);

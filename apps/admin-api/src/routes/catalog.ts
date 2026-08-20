@@ -20,6 +20,7 @@ const importModelSchema = z.object({
   inputPrice: z.coerce.number().min(0).finite().max(MONEY_MAX),
   outputPrice: z.coerce.number().min(0).finite().max(MONEY_MAX),
   cacheInputPrice: z.coerce.number().min(0).finite().max(MONEY_MAX),
+  cacheWritePrice: z.coerce.number().min(0).finite().max(MONEY_MAX),
   contextLength: z.coerce.number().int().positive().finite().max(CONTEXT_LENGTH_MAX).nullable().optional(),
 });
 
@@ -83,6 +84,16 @@ export function catalogRoutes(service: CatalogService, session: MiddlewareHandle
 
   app.get('/v1/model-catalog/sources', session, (c) => c.json({ sources: service.listSources() }));
 
+  /** 价格溯源：某对外名历次导入/改价的 provenance（目录价 × fx → 预填 → 提交）。
+   *  注册在 :sourceId 之前——否则字面段被参数路由吞掉。 */
+  app.get('/v1/model-catalog/price-history', session, async (c) => {
+    const externalName = c.req.query('externalName');
+    if (!externalName || externalName.length > 64) {
+      throw new AppError(400, 'invalid_param', 'externalName 必填（≤64 字符）');
+    }
+    return c.json({ entries: await service.priceHistory(adminCtxOf(c), { externalName }) });
+  });
+
   app.get('/v1/model-catalog/:sourceId', session, async (c) => {
     const sourceId = sourceParam(c.req.param('sourceId'));
     return c.json(await service.comparison(adminCtxOf(c), sourceId));
@@ -100,6 +111,7 @@ export function catalogRoutes(service: CatalogService, session: MiddlewareHandle
         inputPrice: String(m.inputPrice),
         outputPrice: String(m.outputPrice),
         cacheInputPrice: String(m.cacheInputPrice),
+        cacheWritePrice: String(m.cacheWritePrice),
         contextLength: m.contextLength ?? null,
       })),
     });

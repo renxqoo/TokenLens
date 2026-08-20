@@ -35,6 +35,7 @@ import { createAdminAuthService } from '../services/auth.service.js';
 import { createApp } from '../app.js';
 import type { AdminApiConfig } from '../config.js';
 import { createCatalogService, type CatalogSource } from '../services/catalog.service.js';
+import { createFxService } from '../services/fx.service.js';
 import { createModelsService } from '../services/models.service.js';
 import { createChannelsService } from '../services/channels.service.js';
 
@@ -123,6 +124,11 @@ export function capturingMailer(): { mailer: Mailer; sent: Array<{ to: string; c
 }
 
 /** 组装真实 app（目录源/探针 Ai/CORS 白名单/mailer 可注入；Redis/SMTP 缺席 = 开发形态语义） */
+/** 固定汇率夹具：1 USD = 7.2 CNY（ECB 形状） */
+export const MOCK_FX_RATE = '7.2';
+const mockFxFetch: typeof fetch = async () =>
+  new Response(JSON.stringify({ rates: { CNY: Number(MOCK_FX_RATE) } }), { status: 200 });
+
 export function buildTestApp(
   opts: {
     sources?: readonly CatalogSource[];
@@ -160,6 +166,8 @@ export function buildTestApp(
       createTester: tester,
     });
   }
+  // fx 固定汇率（不打真 ECB；预填/比价/diff 断言确定性——覆盖默认装配的真 fetch）
+  assembly.fx = createFxService({ db, fetchImpl: mockFxFetch });
   if (opts.sources) {
     assembly.catalog = createCatalogService({
       db,
@@ -169,6 +177,7 @@ export function buildTestApp(
       freeChannelRpm: config.CATALOG_FREE_CHANNEL_RPM,
       freeChannelBudget: config.CATALOG_FREE_CHANNEL_BUDGET,
       encryptionKey: config.ENCRYPTION_KEY,
+      fx: assembly.fx,
     });
   }
   const app = createApp({
@@ -460,6 +469,8 @@ afterAll(async () => {
     if (refs.length) {
       const refIds = refs.map((r) => r.id);
       await db.delete(modelChannels).where(inArray(modelChannels.channelId, refIds));
+      // 进货流水先于渠道删（FK；套件中断残留不再卡死整个清理链）
+      await db.delete(channelRecharges).where(inArray(channelRecharges.channelId, refIds));
       await db.delete(channels).where(inArray(channels.id, refIds));
     }
     await db.delete(providers).where(inArray(providers.id, createdProviders));

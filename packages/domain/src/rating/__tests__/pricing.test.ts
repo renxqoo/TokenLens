@@ -125,3 +125,50 @@ describe('requiredReservation（单请求上限闸）', () => {
     expect(requiredReservation(tiny, '1').toString()).toBe('0.000000000000000000123456');
   });
 });
+
+describe('cache_write 计价（0063 系数体系）', () => {
+  const base = {
+    inputTokens: 1000,
+    cachedInputTokens: 300,
+    outputTokens: 200,
+    inputPrice: '1',
+    cacheInputPrice: '0.1',
+    outputPrice: '2',
+    coefficient: '1',
+  };
+
+  it('三分段互斥：uncached + cached + write = input；write 分量按 cacheWritePrice 计价', () => {
+    // 无写：1000 输入 = 700×1 + 300×0.1 + 200×2
+    const noWrite = calcAmount(base);
+    // 有写 200：500×1 + 300×0.1 + 200×1.25 + 200×2
+    const withWrite = calcAmount({ ...base, cacheWriteTokens: 200, cacheWritePrice: '1.25' });
+    const diff = withWrite.minus(noWrite);
+    expect(diff.toNumber()).toBeCloseTo(((500 - 700) * 1 + 200 * 1.25) / 1_000_000, 10);
+  });
+
+  it('cached + write 超 input 时夹取（防负未缓存与双计）', () => {
+    const out = calcAmount({ ...base, cacheWriteTokens: 999_999, cacheWritePrice: '10' });
+    expect(out.gte(0)).toBe(true);
+    // 夹后 write = 1000 − 300 = 700；uncached = 0
+    const expected = (300 * 0.1 + 700 * 10 + 200 * 2) / 1_000_000;
+    expect(out.toNumber()).toBeCloseTo(expected, 8);
+  });
+
+  it('系数作用于全部分量（用户价 = 官方分量和 × 系数）', () => {
+    const coeff2 = calcAmount({ ...base, cacheWriteTokens: 200, cacheWritePrice: '1.25', coefficient: '1.5' });
+    const coeff1 = calcAmount({ ...base, cacheWriteTokens: 200, cacheWritePrice: '1.25', coefficient: '1' });
+    expect(coeff2.toNumber()).toBeCloseTo(coeff1.toNumber() * 1.5, 8);
+  });
+
+  it('cacheWritePrice 缺省/0 → 写 token 按输入价计（未配置不得逃逸计费）', () => {
+    const zero = calcAmount({ ...base, cacheWriteTokens: 200 });
+    const none = calcAmount(base);
+    expect(zero.eq(none)).toBe(true);
+  });
+
+  it('estimateMaxCost：cacheWrite 超输入价时进贵价（Anthropic 1.25×/2×）', () => {
+    const plain = estimateMaxCost({ estimatedInputTokens: 1000, maxOutputTokens: 0, inputPrice: '1', outputPrice: '0', coefficient: '1' });
+    const withWrite = estimateMaxCost({ estimatedInputTokens: 1000, maxOutputTokens: 0, inputPrice: '1', cacheWritePrice: '2', outputPrice: '0', coefficient: '1' });
+    expect(withWrite.toNumber()).toBeCloseTo(plain.toNumber() * 2, 8);
+  });
+});
