@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # 服务端统一镜像（gateway / worker / admin-api / client-api / trace-receiver），compose 通过 build arg APP 指定
-# 构建段：全 bun（bun install + bun build）
-# 运行段：bun 运行时（oven/bun 镜像，bun dist/index.js）
+# 构建段：全 bun；全量 bundle（无 --packages=external）→ dist 自包含
+# 运行段：仅 dist（零 node_modules/packages——符号链接布局坑整体退场，镜像 ~40MB）
 FROM oven/bun:1.4-alpine AS builder
 ARG APP
 WORKDIR /repo
@@ -9,7 +9,7 @@ COPY package.json bun.lock tsconfig.base.json ./
 COPY packages ./packages
 COPY apps ./apps
 RUN bun install --frozen-lockfile
-# 尾部 ... = 含依赖图（bun --filter 默认只跑本包；依赖包 dist 不构建则运行时解析必炸）
+# 尾部 ... = 含依赖图（bun --filter 默认只跑本包；bundle 从 workspace 源码取依赖，此处保守保留）
 RUN bun run --filter "@ai-gateway/${APP}..." build \
   && mkdir -p /out \
   && cp -r "apps/${APP}/dist" /out/dist
@@ -18,7 +18,4 @@ FROM oven/bun:1.4-alpine AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=builder /out/dist ./dist
-COPY --from=builder /repo/package.json ./package.json
-COPY --from=builder /repo/packages ./packages
-COPY --from=builder /repo/node_modules ./node_modules
 CMD ["bun", "dist/index.js"]

@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun --conditions=development --env-file=../../.env --watch src/index.ts",
-    "build": "rm -rf dist && bun build src/index.ts --target=bun --format=esm --sourcemap --packages=external --outdir=dist",
+    "build": "rm -rf dist && bun build src/index.ts --target=bun --format=esm --sourcemap --outdir=dist",
     "typecheck": "bun x tsc --noEmit",
     "test": "bun x vitest run",
     "lint": "bun x oxlint"
