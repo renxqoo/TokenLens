@@ -12,6 +12,8 @@ RUN bun run --filter "@ai-gateway/client..." build
 
 FROM oven/bun:1.4-alpine AS runtime
 ENV NODE_ENV=production
+# Next standalone 标准配方：Docker 的 HOSTNAME(=容器ID) 会劫持绑定地址；PORT 缺省 3000
+ENV HOSTNAME=0.0.0.0 PORT=3001
 WORKDIR /app
 # standalone 输出结构与项目目录一致（apps/client/server.js）
 COPY --from=builder /repo/apps/client/.next/standalone ./
