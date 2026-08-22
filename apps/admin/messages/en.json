@@ -310,7 +310,9 @@
     "importFailed": "Import failed",
     "imported": "{count, plural, one {# channel imported} other {# channels imported}}",
     "importEmpty": "Enter at least one channel",
-    "testFailed": "Test failed"
+    "testFailed": "Test failed",
+    "statusDead": "Invalid credentials",
+    "statusUnknown": "Unknown"
   },
   "models": {
     "title": "Model mappings",

@@ -310,7 +310,9 @@
     "importFailed": "导入失败",
     "imported": "已导入 {count} 条",
     "importEmpty": "请输入至少一条渠道",
-    "testFailed": "测试失败"
+    "testFailed": "测试失败",
+    "statusDead": "凭据无效",
+    "statusUnknown": "未知"
   },
   "models": {
     "title": "模型映射",

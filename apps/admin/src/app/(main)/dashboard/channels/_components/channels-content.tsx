@@ -48,12 +48,18 @@ import { moneyText, numericText } from '@ai-gateway/ui/lib/forms';
 import type { AdminChannelRow, ProviderOption } from '@ai-gateway/api-client/types';
 
 // 状态 tone 映射留模块级；label 是 channels 命名空间的 i18n key，渲染处用 t 解析
-const STATUS_META = defineStatusMeta({
-  0: { label: 'statusEnabled', tone: 'success' },
-  1: { label: 'statusDegraded', tone: 'warning' },
-  2: { label: 'statusDisabled', tone: 'neutral' },
-  3: { label: 'statusCooldown', tone: 'warning' },
-});
+const STATUS_META = defineStatusMeta(
+  {
+    0: { label: 'statusEnabled', tone: 'success' },
+    1: { label: 'statusDegraded', tone: 'warning' },
+    2: { label: 'statusDisabled', tone: 'neutral' },
+    3: { label: 'statusCooldown', tone: 'warning' },
+    // 4 = 凭据无效（worker 连续 401/403 标记；换 Key 保存时复位为 0）
+    4: { label: 'statusDead', tone: 'danger' },
+  },
+  // fallback 也走目录键——默认字面量 Unknown 会以 channels.Unknown 原样漏到 UI
+  { label: 'statusUnknown', tone: 'neutral' },
+);
 
 export function ChannelsTable({
   channels,
