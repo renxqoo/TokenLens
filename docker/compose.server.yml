@@ -24,7 +24,6 @@ services:
       - '8443:8443' # 管理后台（自签证书，无子域可用时的独立端口方案）
     volumes:
       - ./nginx/nginx.ip.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./nginx/certs-server:/etc/nginx/certs/self:ro # openssl 自签（SAN 含服务器 IP）
 
   certbot:
     profiles: ['certbot'] # 无域名用不上；显式 --profile certbot 才会启动
