@@ -10,5 +10,8 @@ RUN bun run --filter "@ai-gateway/wallet..." build && bun run --filter "@ai-gate
 
 FROM oven/bun:1.4-alpine AS runtime
 WORKDIR /repo
+# node_modules 必拷：dist 运行时解析 drizzle-orm 等（依赖多被提升到根，与 Dockerfile.server 同口径）
+COPY --from=builder /repo/package.json ./package.json
+COPY --from=builder /repo/node_modules ./node_modules
 COPY --from=builder /repo/packages ./packages
 CMD ["sh", "-c", "bun packages/identity-core/dist/migrate-cli.js && bun packages/ledger-core/dist/migrate-cli.js && (cd packages/db && bun node_modules/.bin/drizzle-kit migrate) && bun packages/wallet/dist/migrate-cli.js"]
